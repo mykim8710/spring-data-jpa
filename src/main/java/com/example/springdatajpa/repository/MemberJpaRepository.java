@@ -44,4 +44,24 @@ public class MemberJpaRepository {
         return em.createQuery("select count(m) from Member m", Long.class)
                 .getSingleResult();
     }
+
+    // 이름과 나이를 기준으로 회원을 조회
+    public List<Member> findByUsernameAndAgeGreaterThan(String username, int age) {
+        String jpql = "select m from Member m where m.username= :username and m.age > :age";
+        return  em.createQuery(jpql, Member.class)
+                    .setParameter("username", username)
+                    .setParameter("age", age)
+                    .getResultList();
+    }
+
+    // @NameQuery 호출
+    public List<Member> findByUsername(String username) {
+        return em.createNamedQuery("Member.findByUsername", Member.class)
+                .setParameter("username", username)
+                .getResultList();
+    }
+
+
+
+
 }
