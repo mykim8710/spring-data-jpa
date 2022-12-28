@@ -3,14 +3,13 @@ package com.example.springdatajpa.repository;
 import com.example.springdatajpa.dto.MemberDto;
 import com.example.springdatajpa.entity.Member;
 import com.example.springdatajpa.entity.Team;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.*;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -224,4 +223,182 @@ class MemberRepositoryTest {
         assertThat(findMembers.size()).isEqualTo(2);
     }
 
+
+    @Test
+    @DisplayName("페이징, 정렬 Page 객체 테스트")
+    void 페이징_정렬_Page객체_테스트() {
+        // given
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        Member m3 = new Member("CCC", 30);
+        Member m4 = new Member("ABB", 10);
+        Member m5 = new Member("AVV", 20);
+        Member m6 = new Member("CCA", 30);
+        Member m7 = new Member("ABC", 10);
+        Member m8 = new Member("ABA", 20);
+        Member m9 = new Member("VVA", 30);
+        Member m10 = new Member("BVC", 10);
+
+        // when
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+        memberRepository.save(m3);
+        memberRepository.save(m4);
+        memberRepository.save(m5);
+        memberRepository.save(m6);
+        memberRepository.save(m7);
+        memberRepository.save(m8);
+        memberRepository.save(m9);
+        memberRepository.save(m10);
+
+        // then
+        int age = 10;
+        int offset = 0;
+        int limit = 3;
+        PageRequest pageRequest = PageRequest.of(offset, limit, Sort.by(Sort.Direction.DESC, "username"));
+
+        Page<Member> pageMembers = memberRepository.findMembersPageByAge(age, pageRequest);
+        List<Member> content = pageMembers.getContent();
+        long totalCount = pageMembers.getTotalElements();
+
+        System.out.println("findMembers = " + content);
+        System.out.println("totalCount = " + totalCount);
+
+        assertThat(content.size()).isEqualTo(3);                // 조회된 데이터 수
+        assertThat(totalCount).isEqualTo(4);                    // 전체 데이터 수
+        assertThat(pageMembers.getNumber()).isEqualTo(0);       // 페이지 번호
+        assertThat(pageMembers.getTotalPages()).isEqualTo(2);   // 전체 페이지 번호
+        assertThat(pageMembers.isFirst()).isTrue();                      // 첫번째 항목인가?
+        assertThat(pageMembers.hasNext()).isTrue();                      // 다음 페이지가 있는가?
+    }
+
+
+    @Test
+    @DisplayName("페이징, 정렬 Slice 객체 테스트")
+    void 페이징_정렬_Slice객체_테스트() {
+        // given
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        Member m3 = new Member("CCC", 30);
+        Member m4 = new Member("ABB", 10);
+        Member m5 = new Member("AVV", 20);
+        Member m6 = new Member("CCA", 30);
+        Member m7 = new Member("ABC", 10);
+        Member m8 = new Member("ABA", 20);
+        Member m9 = new Member("VVA", 30);
+        Member m10 = new Member("BVC", 10);
+
+        // when
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+        memberRepository.save(m3);
+        memberRepository.save(m4);
+        memberRepository.save(m5);
+        memberRepository.save(m6);
+        memberRepository.save(m7);
+        memberRepository.save(m8);
+        memberRepository.save(m9);
+        memberRepository.save(m10);
+
+        // then
+        int age = 10;
+        int offset = 0;
+        int limit = 3;
+        PageRequest pageRequest = PageRequest.of(offset, limit, Sort.by(Sort.Direction.DESC, "username"));
+        Slice<Member> pageMembers = memberRepository.findMembersSliceByAge(age, pageRequest);
+
+        // 현재 페이지
+        int number = pageMembers.getNumber();
+        System.out.println("현재 페이지, number = " + number);
+
+        // 페이지 크기
+        int size = pageMembers.getSize();
+        System.out.println("페이지 크기, size = " + size);
+
+        // 현재 페이지에 나올 데이터 수
+        int numberOfElements = pageMembers.getNumberOfElements();
+        System.out.println("현재 페이지에 나올 데이터 수, numberOfElements = " + numberOfElements);
+
+        // 조회된 데이터
+        List<Member> content = pageMembers.getContent();
+        System.out.println("조회된 데이터, content = " + content);
+
+        // 조회된 데이터 존재여부
+        boolean hasContent = pageMembers.hasContent();
+        System.out.println("조회된 데이터 존재여부, hasContent = " + hasContent);
+
+        // 정렬정보
+        Sort sort = pageMembers.getSort();
+        System.out.println("정렬정보, sort = " + sort);
+
+        // 현재 페이지가 첫 페이지인지 여부
+        boolean isFirst = pageMembers.isFirst();
+        System.out.println("현재 페이지가 첫 페이지인지 여부, isFirst = " + isFirst);
+
+        // 현재 페이지가 마지막 페이지인지 여부
+        boolean isLast = pageMembers.isLast();
+        System.out.println("현재 페이지가 마지막 페이지인지 여부, isLast = " + isLast);
+
+        // 다음 페이지 여부
+        boolean hasNext = pageMembers.hasNext();
+        System.out.println("다음 페이지 여부, hasNext = " + hasNext);
+
+        // 이전 페이지 여부
+        boolean hasPrevious = pageMembers.hasPrevious();
+        System.out.println("이전 페이지 여부, hasPrevious = " + hasPrevious);
+
+        // 페이지 요청 정보
+        Pageable pageable = pageMembers.getPageable();
+        System.out.println("페이지 요청 정보, pageable = " + pageable);
+
+        // 다음 페이지 객체
+        Pageable nextPageable = pageMembers.nextPageable();
+        System.out.println("다음 페이지 객체, nextPageable = " + nextPageable);
+
+        // 이전 페이지 객체
+        Pageable previousPageable = pageMembers.previousPageable();
+        System.out.println("이전 페이지 객체, previousPageable = " + previousPageable);
+
+    }
+
+
+    @Test
+    @DisplayName("count 쿼리분리 페이징 테스트")
+    void count_쿼리분리_페이징_테스트() {
+        // given
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        Member m3 = new Member("CCC", 30);
+        Member m4 = new Member("ABB", 10);
+        Member m5 = new Member("AVV", 20);
+        Member m6 = new Member("CCA", 30);
+        Member m7 = new Member("ABC", 10);
+        Member m8 = new Member("ABA", 20);
+        Member m9 = new Member("VVA", 30);
+        Member m10 = new Member("BVC", 10);
+
+        // when
+        memberRepository.save(m1);
+        memberRepository.save(m2);
+        memberRepository.save(m3);
+        memberRepository.save(m4);
+        memberRepository.save(m5);
+        memberRepository.save(m6);
+        memberRepository.save(m7);
+        memberRepository.save(m8);
+        memberRepository.save(m9);
+        memberRepository.save(m10);
+
+        // then
+        int offset = 0;
+        int limit = 3;
+        PageRequest pageRequest = PageRequest.of(offset, limit);
+
+        Page<Member> memberPage = memberRepository.findMemberAllCountBy(pageRequest);
+        System.out.println("memberPage = " + memberPage.getContent());
+
+        // 페이지를 유지하면서 엔티티를 DTO로 변환하기
+        Page<MemberDto> dtoPage = memberPage.map(m -> new MemberDto(m.getId(), m.getUsername(), null));
+        System.out.println("dtoPage = " + dtoPage.getContent());
+    }
 }

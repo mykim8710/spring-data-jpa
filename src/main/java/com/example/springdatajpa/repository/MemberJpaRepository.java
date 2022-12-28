@@ -61,7 +61,23 @@ public class MemberJpaRepository {
                 .getResultList();
     }
 
+//    검색 조건: 나이가 10살
+//    정렬 조건: 이름으로 내림차순
+//    페이징 조건: 첫 번째 페이지, 페이지당 보여줄 데이터는 3건
+    public List<Member> findMembersPagination(int age, int offset, int limit) {
+        String jpql = "select m from Member m where m.age =:age order by m.username desc";
 
+        return em.createQuery(jpql, Member.class)
+                .setParameter("age", age)
+                .setFirstResult(offset) // ~에서 부터
+                .setMaxResults(limit)   // 몇개 가져올거야
+                .getResultList();
+    }
 
-
+    public long totalCount(int age) {
+        String jpql = "select count(m) from Member m where m.age =:age";
+        return em.createQuery(jpql, Long.class)
+                .setParameter("age", age)
+                .getSingleResult();
+    }
 }

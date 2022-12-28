@@ -100,6 +100,45 @@ class MemberJpaRepositoryTest {
         assertThat(findMembers.size()).isEqualTo(2);
     }
 
+    @Test
+    @DisplayName("페이징, 정렬 테스트")
+    void 페이징_정렬_테스트() {
+        // given
+        Member m1 = new Member("AAA", 10);
+        Member m2 = new Member("BBB", 20);
+        Member m3 = new Member("CCC", 30);
+        Member m4 = new Member("ABB", 10);
+        Member m5 = new Member("AVV", 20);
+        Member m6 = new Member("CCA", 30);
+        Member m7 = new Member("ABC", 10);
+        Member m8 = new Member("ABA", 20);
+        Member m9 = new Member("VVA", 30);
+        Member m10 = new Member("BVC", 10);
 
+        // when
+        memberJpaRepository.save(m1);
+        memberJpaRepository.save(m2);
+        memberJpaRepository.save(m3);
+        memberJpaRepository.save(m4);
+        memberJpaRepository.save(m5);
+        memberJpaRepository.save(m6);
+        memberJpaRepository.save(m7);
+        memberJpaRepository.save(m8);
+        memberJpaRepository.save(m9);
+        memberJpaRepository.save(m10);
+
+        // then
+        int age = 10;
+        int offset = 0;
+        int limit = 3;
+
+        long totalCount = memberJpaRepository.totalCount(age);
+        List<Member> findMembers = memberJpaRepository.findMembersPagination(age, offset, limit);
+        System.out.println("totalCount = " + totalCount);
+        System.out.println("findMembers = " + findMembers);
+
+        assertThat(totalCount).isEqualTo(4);
+        assertThat(findMembers.size()).isEqualTo(limit);
+    }
 
 }
