@@ -401,4 +401,22 @@ class MemberRepositoryTest {
         Page<MemberDto> dtoPage = memberPage.map(m -> new MemberDto(m.getId(), m.getUsername(), null));
         System.out.println("dtoPage = " + dtoPage.getContent());
     }
+
+    @Test
+    @DisplayName("벌크성 수정 쿼리 테스트")
+    void bulkUpdateQueryTest() {
+        // given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 19));
+        memberRepository.save(new Member("member3", 20));
+        memberRepository.save(new Member("member4", 21));
+        memberRepository.save(new Member("member5", 40));
+
+        // when
+        int resultCount = memberRepository.bulkAgePlus(20);
+        System.out.println("resultCount = " + resultCount);
+
+        // then
+        assertThat(resultCount).isEqualTo(3);
+    }
 }
