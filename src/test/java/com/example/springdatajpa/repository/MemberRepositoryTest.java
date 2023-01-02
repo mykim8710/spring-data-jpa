@@ -3,6 +3,7 @@ package com.example.springdatajpa.repository;
 import com.example.springdatajpa.dto.MemberDto;
 import com.example.springdatajpa.entity.Member;
 import com.example.springdatajpa.entity.Team;
+import org.hibernate.graph.Graph;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.*;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,6 +25,9 @@ class MemberRepositoryTest {
 
     @Autowired
     TeamRepository teamRepository;
+
+    @Autowired
+    EntityManager em;
 
     @Test
     @DisplayName("Spring Data JPA Member save 기본 테스트")
@@ -419,4 +424,117 @@ class MemberRepositoryTest {
         // then
         assertThat(resultCount).isEqualTo(3);
     }
+
+
+    @Test
+    @DisplayName("지연로딩_fetch 조인 테스트")
+    void 지연로딩_fetch조인_테스트() {
+        // given
+        // member1 -> teamA
+        // member2 -> teamB
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        memberRepository.save(new Member("member1", 10, teamA));
+        memberRepository.save(new Member("member2", 20, teamB));
+
+        em.flush();
+        em.clear();
+
+        // when
+        //List<Member> members = memberRepository.findAll(); // 지연로딩
+        List<Member> members = memberRepository.findMembersFetchJoin(); // fetch조인
+
+        // then
+        for (Member member : members) {
+            System.out.println("member.getUsername() = " + member.getUsername());
+            System.out.println("member.getTeam().getName() = " + member.getTeam().getName());// 지연로딩
+        }
+
+    }
+
+
+    @Test
+    @DisplayName("Entity Graph 테스트")
+    void 지연로딩_EntityGraph_테스트() {
+        // given
+        // member1 -> teamA
+        // member2 -> teamB
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        memberRepository.save(new Member("member1", 10, teamA));
+        memberRepository.save(new Member("member2", 20, teamB));
+
+        em.flush();
+        em.clear();
+
+        // when
+        //List<Member> members = memberRepository.findAll();  // 공통 메서드 오버라이드
+        //List<Member> members = memberRepository.findMemberEntityGraph();    // JPQL + 엔티티 그래프
+        //List<Member> members = memberRepository.findMemberEntityGraphByUsername("member1"); // 메서드이름 쿼리에서 사용
+        List<Member> members = memberRepository.findMemberNamedEntityGraph();   // NamedEntityGraph 사용
+
+        // then
+        for (Member member : members) {
+            System.out.println("member.getUsername() = " + member.getUsername());
+            System.out.println("member.getTeam() = " + member.getTeam());
+            System.out.println("member.getTeam().getName() = " + member.getTeam().getName());// 지연로딩
+        }
+    }
+
+
+    @Test
+    @DisplayName("쿼리힌트 테스트")
+    void 쿼리힌트_테스트() {
+        // given
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        em.flush();
+        em.clear();
+
+        // when
+//        Member findMember = memberRepository.findById(member1.getId()).get();
+//        findMember.setUsername("member2");  // update
+//        em.flush(); // 변경감지 발생
+
+        Member findMember = memberRepository.findMemberReadOnlyByUsername("member1");
+        findMember.setUsername("member2");
+
+        em.flush(); // update Query X
+
+    }
+
+    @Test
+    @DisplayName("Lock 테스트")
+    void Lock_테스트() {
+        // given
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        em.flush();
+        em.clear();
+
+        // when
+        Member findMember = memberRepository.findMemberLockByUsername("member1");
+    }
+
+
+    @Test
+    @DisplayName("사용자정의 리포지토리 테스트")
+    void 사용자정의_리포지토리_테스트() {
+        // given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 20));
+
+        // when
+        List<Member> findMembers = memberRepository.findAllMembersCustom();
+
+    }
+
 }

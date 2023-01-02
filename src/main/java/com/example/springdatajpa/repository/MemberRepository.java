@@ -5,15 +5,15 @@ import com.example.springdatajpa.entity.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
+import javax.persistence.LockModeType;
+import javax.persistence.QueryHint;
 import java.util.Collection;
 import java.util.List;
 
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberCustomRepository {
     // 메서드명으로 쿼리 생성
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age);
 
@@ -58,4 +58,41 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Modifying(clearAutomatically = true) // excuteUpate 실행, 없으면 error
     @Query("update Member m set m.age = m.age + 1 where m.age >= :age")
     int bulkAgePlus(@Param("age") int age);
+
+
+    // jpql fetch join
+    @Query("select m from Member m left join fetch m.team")
+    List<Member> findMembersFetchJoin();
+
+
+    // EntityGraph
+    // 공통 메서드 오버라이드
+    @Override
+    @EntityGraph(attributePaths = {"team"})
+    List<Member> findAll();
+
+    // JPQL + 엔티티 그래프
+    @EntityGraph(attributePaths = {"team"})
+    @Query("select m from Member m")
+    List<Member> findMemberEntityGraph();
+
+    // 메서드이름 쿼리에서 사용
+    @EntityGraph(attributePaths = {"team"})
+    List<Member> findMemberEntityGraphByUsername(@Param("username") String username);
+
+    // NamedEntityGraph 사용
+    @EntityGraph("Member.all")
+    @Query("select m from Member m")
+    List<Member> findMemberNamedEntityGraph();
+
+    // JPA Hint & Lock
+    // 쿼리 힌트
+    @QueryHints(value = @QueryHint(name = "org.hibernate.readOnly", value = "true"))
+    Member findMemberReadOnlyByUsername(@Param("username") String username);
+
+    // LOCK : select for lock
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    Member findMemberLockByUsername(@Param("username") String username);
+
+
 }
