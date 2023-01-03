@@ -1,6 +1,7 @@
 package com.example.springdatajpa.repository;
 
 import com.example.springdatajpa.dto.MemberDto;
+import com.example.springdatajpa.dto.UsernameOnlyDto;
 import com.example.springdatajpa.entity.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,7 +14,7 @@ import javax.persistence.QueryHint;
 import java.util.Collection;
 import java.util.List;
 
-public interface MemberRepository extends JpaRepository<Member, Long>, MemberCustomRepository {
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberCustomRepository, JpaSpecificationExecutor<Member> {
     // 메서드명으로 쿼리 생성
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age);
 
@@ -94,5 +95,23 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberCus
     @Lock(LockModeType.PESSIMISTIC_READ)
     Member findMemberLockByUsername(@Param("username") String username);
 
+    // Projections(인터페이스 기반 Closed Projections)
+    List<UsernameOnly> findProjectionsByUsername(@Param("username") String username);
 
+    // 클래스 기반 Projection
+    List<UsernameOnlyDto> findClassProjectionsByUsername(@Param("username") String username);
+
+    // 동적 Projections
+    <T> List<T> findDynamicProjectionsByUsername(String username, Class<T> type);
+
+    // JPA 네이티브 SQL 지원
+    @Query(value = "select * from Member where username = ?", nativeQuery = true)
+    Member findMemberByNativeQuery(String username);
+
+    // 스프링 데이터 JPA 네이티브 쿼리 + 인터페이스 기반 Projections 활용
+    @Query(value = "SELECT m.member_id as id, m.username, t.name as teamName " +
+                    "FROM member m left join team t ON m.team_id = t.team_id",
+           countQuery = "SELECT count(*) from member",
+           nativeQuery = true)
+    Page<MemberProjection> findMemberByNativeQueryProjections(Pageable pageable);
 }

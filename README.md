@@ -46,3 +46,9 @@
 - 스프링 데이터 JPA 분석
   - 스프링 데이터 JPA 구현체 분석
   - 새로운 엔티티를 구별하는 방법
+
+- etc
+  - Specifications (명세)
+  - Query By Example
+  - Projections
+  - 네이티브 쿼리
